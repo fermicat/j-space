@@ -1,0 +1,31 @@
+[project]
+name = "j-space"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.139.0",
+    "huggingface-hub>=1.22.0",
+    "jlens",
+    "numpy>=2.5.1",
+    "torch>=2.12.1",
+    "transformers>=5.5",
+    "uvicorn>=0.50.2",
+]
+
+[tool.uv.workspace]
+members = [
+    "vendor/jacobian-lens",
+]
+
+[tool.uv.sources]
+jlens = { workspace = true, editable = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

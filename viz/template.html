@@ -1,0 +1,369 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>j-space 复现:看见模型沉默的思想</title>
+<style>
+:root {
+  --surface: #fcfcfb; --page: #f9f9f7;
+  --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --baseline: #c3c2b7; --ring: rgba(11,11,11,0.10);
+  --accent: #4a3aa7; --accent-soft: rgba(74,58,167,0.10);
+  --seq-100:#cde2fb; --seq-200:#9ec5f4; --seq-300:#6da7ec; --seq-400:#3987e5;
+  --seq-500:#256abf; --seq-600:#184f95; --seq-700:#0d366b;
+  --s1:#2a78d6; --s2:#1baf7a; --s3:#eda100; --s4:#008300;
+  --s5:#4a3aa7; --s6:#e34948; --s7:#e87ba4; --s8:#eb6834;
+  --card: #ffffff;
+  --cs-mid-ink: #0b0b0b; --cs-deep-ink: #ffffff; --cs-top-ink: #ffffff;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --surface: #1a1a19; --page: #0d0d0d;
+  --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --baseline: #383835; --ring: rgba(255,255,255,0.12);
+  --accent: #9085e9; --accent-soft: rgba(144,133,233,0.16);
+  --seq-100:#0d366b; --seq-200:#104281; --seq-300:#184f95; --seq-400:#1c5cab;
+  --seq-500:#2a78d6; --seq-600:#3987e5; --seq-700:#86b6ef;
+  --s1:#3987e5; --s2:#199e70; --s3:#c98500; --s4:#008300;
+  --s5:#9085e9; --s6:#e66767; --s7:#d55181; --s8:#d95926;
+  --card: #161615;
+  --cs-mid-ink: #ffffff; --cs-deep-ink: #ffffff; --cs-top-ink: #0b0b0b;
+}}
+:root[data-theme="light"] {
+  --surface: #fcfcfb; --page: #f9f9f7;
+  --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --baseline: #c3c2b7; --ring: rgba(11,11,11,0.10);
+  --accent: #4a3aa7; --accent-soft: rgba(74,58,167,0.10);
+  --seq-100:#cde2fb; --seq-200:#9ec5f4; --seq-300:#6da7ec; --seq-400:#3987e5;
+  --seq-500:#256abf; --seq-600:#184f95; --seq-700:#0d366b;
+  --s1:#2a78d6; --s2:#1baf7a; --s3:#eda100; --s4:#008300;
+  --s5:#4a3aa7; --s6:#e34948; --s7:#e87ba4; --s8:#eb6834;
+  --card: #ffffff;
+  --cs-mid-ink: #0b0b0b; --cs-deep-ink: #ffffff; --cs-top-ink: #ffffff;
+}
+:root[data-theme="dark"] {
+  --surface: #1a1a19; --page: #0d0d0d;
+  --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --baseline: #383835; --ring: rgba(255,255,255,0.12);
+  --accent: #9085e9; --accent-soft: rgba(144,133,233,0.16);
+  --seq-100:#0d366b; --seq-200:#104281; --seq-300:#184f95; --seq-400:#1c5cab;
+  --seq-500:#2a78d6; --seq-600:#3987e5; --seq-700:#86b6ef;
+  --s1:#3987e5; --s2:#199e70; --s3:#c98500; --s4:#008300;
+  --s5:#9085e9; --s6:#e66767; --s7:#d55181; --s8:#d95926;
+  --card: #161615;
+  --cs-mid-ink: #ffffff; --cs-deep-ink: #ffffff; --cs-top-ink: #0b0b0b;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font: 16px/1.65 system-ui, -apple-system, "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+.mono, .tok, .chip, .formula, .cellword, .ranknum {
+  font-family: ui-monospace, "SF Mono", Menlo, "PingFang SC", monospace;
+}
+.serif { font-family: Georgia, "Songti SC", "Noto Serif SC", STSong, serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+a { color: var(--accent); text-decoration-thickness: 1px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- hero ---------- */
+header { padding: 64px 0 40px; }
+.eyebrow {
+  font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 18px;
+}
+.eyebrow a { color: var(--muted); }
+h1 {
+  margin: 0 0 10px;
+  font-size: clamp(30px, 4.6vw, 46px); line-height: 1.22; font-weight: 700;
+}
+h1 .silent { color: var(--accent); }
+.thesis { max-width: 62ch; color: var(--ink-2); margin: 0 0 8px; }
+.thesis-en { max-width: 72ch; color: var(--muted); font-size: 13.5px; margin: 0; }
+
+/* signature: the thought filmstrip */
+.filmstrip { margin-top: 36px; }
+.filmstrip .fs-caption { font-size: 13px; color: var(--ink-2); margin-bottom: 10px; }
+.fs-scroll { overflow-x: auto; padding-bottom: 6px; }
+.fs-row { display: flex; align-items: stretch; gap: 4px; width: max-content; }
+.fs-cell {
+  min-width: 74px; padding: 8px 8px 6px; border-radius: 4px;
+  background: var(--surface); border: 1px solid var(--ring);
+  display: flex; flex-direction: column; gap: 2px; align-items: center;
+  opacity: 0; transform: translateY(4px);
+  animation: fsin 0.35s ease forwards; animation-delay: var(--d, 0s);
+}
+.fs-cell .l { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+.fs-cell .w { font-size: 13px; }
+.fs-cell.hit { border-color: var(--accent); background: var(--accent-soft); }
+.fs-cell.hit .w { color: var(--accent); font-weight: 700; }
+.fs-cell.out { border-style: solid; border-color: var(--baseline); }
+.fs-arrow { align-self: center; color: var(--muted); font-size: 15px; padding: 0 2px; }
+@keyframes fsin { to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .fs-cell { animation: none; opacity: 1; transform: none; }
+}
+
+/* ---------- concept cards ---------- */
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 26px 0 8px; }
+@media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+.card {
+  background: var(--card); border: 1px solid var(--ring); border-radius: 8px;
+  padding: 18px 18px 16px;
+}
+.card h3 { margin: 0 0 8px; font-size: 15.5px; }
+.card p { margin: 0 0 6px; font-size: 13.5px; color: var(--ink-2); }
+.card .en { color: var(--muted); font-size: 12px; margin: 0; }
+.formula {
+  display: block; background: var(--accent-soft); border-radius: 6px;
+  padding: 8px 10px; font-size: 13px; margin: 10px 0; overflow-x: auto;
+  white-space: nowrap; color: var(--ink);
+}
+sub, sup { font-size: 0.72em; }
+
+/* ---------- instrument ---------- */
+.instrument {
+  background: var(--card); border: 1px solid var(--ring); border-radius: 10px;
+  padding: 22px; margin: 34px 0;
+}
+.demo-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.demo-chip {
+  border: 1px solid var(--ring); background: var(--surface); color: var(--ink-2);
+  border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+}
+.demo-chip:hover { border-color: var(--baseline); }
+.demo-chip.active { background: var(--ink); color: var(--page); border-color: var(--ink); }
+
+.demo-head h2 { margin: 4px 0 6px; font-size: 21px; }
+.demo-head .desc { margin: 0 0 4px; font-size: 14px; color: var(--ink-2); max-width: 80ch; }
+.demo-head .desc-en { margin: 0 0 12px; font-size: 12.5px; color: var(--muted); max-width: 90ch; }
+.answer-line { font-size: 13.5px; margin: 10px 0 4px; color: var(--ink-2); }
+.answer-line .chip {
+  background: var(--surface); border: 1px solid var(--ring); border-radius: 4px;
+  padding: 2px 8px; font-size: 13px; color: var(--ink);
+}
+
+/* grid heatmap */
+.gridwrap { margin-top: 16px; }
+.grid-hint { font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
+.grid-scroll { overflow-x: auto; border: 1px solid var(--ring); border-radius: 8px; background: var(--surface); }
+table.lensgrid { border-collapse: separate; border-spacing: 2px; margin: 8px; }
+.lensgrid th { font-weight: 500; padding: 0; }
+.lensgrid th.pos {
+  vertical-align: bottom; padding: 6px 3px; cursor: pointer; border-radius: 4px;
+}
+.lensgrid th.pos .tok {
+  display: block; font-size: 11.5px; padding: 3px 5px; border-radius: 4px;
+  background: var(--page); border: 1px solid var(--ring);
+  max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: pre;
+}
+.lensgrid th.pos.selcol .tok { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.lensgrid th.layer {
+  font-size: 10.5px; color: var(--muted); text-align: right;
+  padding-right: 8px; white-space: nowrap;
+}
+.lensgrid th.layer.outrow { color: var(--ink-2); font-weight: 700; }
+.lensgrid td {
+  padding: 0; cursor: pointer; border-radius: 3px; position: relative;
+}
+.cellword {
+  display: block; font-size: 10.5px; line-height: 1; padding: 5px 4px;
+  max-width: 72px; min-width: 46px; overflow: hidden; text-overflow: ellipsis;
+  white-space: pre; text-align: center; border-radius: 3px;
+  border: 1px solid transparent; color: var(--ink-2);
+}
+.lensgrid td:hover .cellword { border-color: var(--baseline); }
+.lensgrid td.sel .cellword { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.lensgrid tr.outrow td .cellword { border-top: 1px solid var(--baseline); border-radius: 0 0 3px 3px; }
+.cs1 { background: var(--seq-100); }
+.cs2 { background: var(--seq-200); }
+.cs3 { background: var(--seq-300); color: var(--cs-mid-ink); }
+.cs4 { background: var(--seq-400); color: var(--cs-deep-ink); }
+.cs5 { background: var(--seq-500); color: var(--cs-deep-ink); }
+.cs6 { background: var(--seq-600); color: var(--cs-deep-ink); }
+.cs7 { background: var(--seq-700); color: var(--cs-top-ink); }
+
+.grid-legend { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-2); margin: 10px 2px 0; flex-wrap: wrap; }
+.ramp { display: inline-flex; height: 10px; border-radius: 3px; overflow: hidden; }
+.ramp i { width: 22px; height: 10px; display: inline-block; }
+
+/* inspector + trajectory */
+.panels { display: grid; grid-template-columns: minmax(300px, 5fr) minmax(380px, 7fr); gap: 16px; margin-top: 18px; }
+@media (max-width: 980px) { .panels { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--ring); border-radius: 8px; padding: 14px 16px; }
+.panel h4 { margin: 0 0 4px; font-size: 13.5px; }
+.panel .sub { font-size: 11.5px; color: var(--muted); margin: 0 0 10px; }
+.topk { display: flex; flex-direction: column; gap: 4px; }
+.topk-row { display: flex; align-items: center; gap: 8px; }
+.topk-row .chip {
+  border: 1px solid var(--ring); background: var(--card); border-radius: 4px;
+  padding: 2px 8px; font-size: 12.5px; cursor: pointer; color: var(--ink);
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: pre;
+}
+.topk-row .chip:hover { border-color: var(--accent); }
+.topk-row .chip.pinned { box-shadow: inset 3px 0 0 var(--pc, var(--accent)); font-weight: 600; }
+.topk-row .chip.notrack { cursor: default; opacity: 0.66; }
+.topk-row .ranknum { font-size: 11px; color: var(--muted); min-width: 52px; }
+.topk-row .gloss { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.jspace-block { margin-top: 16px; }
+.evmeter { height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; margin: 6px 0 2px; }
+.evmeter i { display: block; height: 6px; background: var(--seq-500); border-radius: 3px; }
+.evlabel { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; }
+.atoms { display: flex; flex-direction: column; gap: 3px; }
+.atom { display: grid; grid-template-columns: 130px 1fr 44px; align-items: center; gap: 8px; }
+.atom .chip {
+  font-size: 11.5px; padding: 1px 6px; border: 1px solid var(--ring); border-radius: 4px;
+  background: var(--card); overflow: hidden; text-overflow: ellipsis; white-space: pre;
+  cursor: default; color: var(--ink);
+}
+.atom .chip.intopk { border-color: var(--accent); color: var(--accent); }
+.atom .bar { height: 8px; border-radius: 4px 4px 4px 4px; background: var(--seq-400); min-width: 2px; }
+.atom .val { font-size: 10.5px; color: var(--muted); text-align: right; }
+
+/* trajectory chart */
+.traj-legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.traj-legend .chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
+  border: 1px solid var(--ring); border-radius: 4px; padding: 2px 8px; cursor: pointer;
+  background: var(--card); color: var(--ink);
+}
+.traj-legend .chip i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; background: var(--pc); }
+.traj-legend .chip .x { color: var(--muted); font-size: 11px; }
+svg text { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.traj-empty { color: var(--muted); font-size: 12.5px; padding: 30px 8px; text-align: center; }
+.tooltip {
+  position: fixed; pointer-events: none; z-index: 30; display: none;
+  background: var(--ink); color: var(--page); border-radius: 6px;
+  font-size: 12px; padding: 6px 9px; max-width: 320px; line-height: 1.5;
+}
+
+/* note + method */
+.notebox {
+  margin-top: 18px; border-left: 3px solid var(--accent);
+  background: var(--accent-soft); border-radius: 0 8px 8px 0; padding: 12px 16px;
+}
+.notebox p { margin: 0; font-size: 13.5px; }
+.notebox .en { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.method { margin: 40px 0 24px; }
+.method h2 { font-size: 19px; margin-bottom: 8px; }
+.method p, .method li { font-size: 13.5px; color: var(--ink-2); }
+.method .en { color: var(--muted); font-size: 12.5px; }
+footer { padding: 18px 0 48px; color: var(--muted); font-size: 12.5px; }
+footer .sep { margin: 0 8px; }
+
+/* live mode */
+.livebar { display: none; gap: 10px; margin: 0 0 16px; }
+.livebar.on { display: flex; }
+.livebar input {
+  flex: 1; font-size: 14px; padding: 9px 12px; border-radius: 8px;
+  border: 1px solid var(--ring); background: var(--surface); color: var(--ink);
+}
+.livebar button {
+  font-size: 14px; padding: 9px 18px; border-radius: 8px; border: none;
+  background: var(--accent); color: #fff; cursor: pointer;
+}
+.livebar button[disabled] { opacity: 0.5; cursor: wait; }
+.livestatus { font-size: 12.5px; color: var(--muted); margin: -8px 0 12px; display: none; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">复现 · <a href="https://www.anthropic.com/research/global-workspace">Anthropic — A global workspace in language models</a> (2026-07-06) · Qwen3.5-0.8B</div>
+  <h1 class="serif">模型开口之前,<br>先看见它<span class="silent">沉默的思想</span></h1>
+  <p class="thesis">J-lens(Jacobian 透镜)把任意一层的内部激活"传送"到输出词表上,读出模型想着但还没说出的词。这些可言语化的方向构成一个小而繁忙的工作空间——j-space。下面的每个演示都在本机、在一个 0.8B 开源模型上真实测得。</p>
+  <p class="thesis-en">The J-lens transports any layer's residual activation onto the vocabulary, reading out words the model is disposed to say but hasn't said. Every readout below was measured locally on an open-weights 0.8B model.</p>
+
+  <div class="filmstrip">
+    <div class="fs-caption" id="fs-caption"></div>
+    <div class="fs-scroll"><div class="fs-row" id="fs-row"></div></div>
+  </div>
+</header>
+
+<section class="cards">
+  <div class="card">
+    <h3>J-lens:平均 Jacobian 透镜</h3>
+    <span class="formula">J<sub>ℓ</sub> = 𝔼<sub>t, t′≥t, prompts</sub> [ ∂h<sub>final,t′</sub> / ∂h<sub>ℓ,t</sub> ]&nbsp;&nbsp;·&nbsp;&nbsp;lens<sub>ℓ</sub>(h) = softmax( W<sub>U</sub> · norm( J<sub>ℓ</sub> h ) )</span>
+    <p>对每层学一个平均输入-输出 Jacobian,把该层残差流线性映射到最终层基底,再用模型自己的 unembedding 解码成全词表排名。</p>
+    <p class="en">One averaged Jacobian per layer transports the residual into the final basis; the model's own unembedding decodes it into a full-vocabulary ranking.</p>
+  </div>
+  <div class="card">
+    <h3>j-space:可言语化的工作空间</h3>
+    <p>激活中能表示为 J-lens 向量稀疏非负组合(≤25 个活跃概念)的那部分。它只占总激活方差的一小部分,却被网络中远多于普通方向的组件读写——像一个广播枢纽。</p>
+    <p class="en">The sparse nonnegative span of J-lens vectors (≤25 active concepts at a time): a small slice of activation variance that far more components read and write — a broadcast hub.</p>
+  </div>
+  <div class="card">
+    <h3>对应:全局工作空间理论</h3>
+    <p>Baars 的意识剧场:并行的专门处理器在后台工作,只有聚光灯下的少量内容被广播给全场。论文发现语言模型中自发形成了同构的结构——报告、聚焦、沉默推理都经由它。</p>
+    <p class="en">Baars' theater of consciousness: many parallel processors, one spotlight broadcast to all. The paper finds an isomorphic structure emerging in language models.</p>
+  </div>
+</section>
+
+<section class="instrument">
+  <div class="demo-chips" id="demo-chips" role="tablist"></div>
+  <div class="livebar" id="livebar">
+    <input id="live-input" placeholder="输入任意 prompt,实时读出它的 j-space…(Enter 提交)" />
+    <button id="live-go">读出</button>
+  </div>
+  <div class="livestatus" id="livestatus"></div>
+
+  <div class="demo-head">
+    <h2 class="serif" id="d-title"></h2>
+    <p class="desc" id="d-desc"></p>
+    <p class="desc-en" id="d-desc-en"></p>
+    <p class="answer-line">模型实际输出 model says → <span class="chip" id="d-answer"></span></p>
+  </div>
+
+  <div class="gridwrap">
+    <p class="grid-hint">行 = 层(顶部 L0 → 底部为模型实际输出);列 = prompt 的每个 token。每格是 J-lens 在该处读出的第 1 名词;<b>点击格子</b>检查该处 top-k 与 j-space 分解;<b>点击词芯片</b>把它钉进右侧轨迹图。着色 = 焦点 token 在该格的全词表排名(越深 = 越靠前)。</p>
+    <div class="grid-scroll"><table class="lensgrid" id="lensgrid"></table></div>
+    <div class="grid-legend" id="grid-legend"></div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <h4>透镜检查器 · Cell inspector <span class="mono" id="insp-loc"></span></h4>
+      <p class="sub">该 (位置, 层) 的 top-k 读出;#N 为全词表排名(#1 = 模型此刻最想说的词)。点击词芯片可钉住。</p>
+      <div class="topk" id="topk"></div>
+      <div class="jspace-block">
+        <h4>j-space 稀疏分解 · ≤25 原子 <span class="mono" id="js-loc"></span></h4>
+        <div class="evmeter"><i id="evbar" style="width:0%"></i></div>
+        <p class="evlabel" id="evlabel"></p>
+        <div class="atoms" id="atoms"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h4>排名轨迹 · Rank across layers</h4>
+      <p class="sub" id="traj-sub">选中位置上,被钉住的词在每一层的全词表排名(对数轴,越高 = 越接近说出口)。</p>
+      <div class="traj-legend" id="traj-legend"></div>
+      <div id="traj-chart"></div>
+    </div>
+  </div>
+
+  <div class="notebox">
+    <p id="d-note"></p>
+    <p class="en" id="d-note-en"></p>
+  </div>
+</section>
+
+<section class="method">
+  <h2 class="serif">方法与忠实度 · Method &amp; fidelity</h2>
+  <ul>
+    <li><b>透镜权重</b>:Neuronpedia 预拟合(<span class="mono">Qwen3.5-0.8B</span>,wikitext-103,233 条 prompt 收敛),经 Anthropic 官方 <span class="mono">jlens</span> 参考实现加载与应用;读出、排名、top-k 网格均由官方 <span class="mono">compute_slice</span> 计算。</li>
+    <li><b>j-space 分解</b>:非负匹配追踪,稀疏预算 k≤25,与论文一致。一处偏差:论文对原始激活 h 沿 W<sub>U</sub>J<sub>ℓ</sub> 行分解;在 0.8B 上该分解被激活中不可言语化的主体支配,故本页分解<b>传送后向量 J<sub>ℓ</sub>h</b>(即读出实际度量的对象),"解释方差"指传送向量中可言语化成分的占比。</li>
+    <li><b>诚实的局限</b>:0.8B 模型常在第二跳失败(这本身成了最有趣的演示);心算调制仅部分复现(rank ≈57);ASCII 脸演示在该规模下不出现,已弃用。论文实验用 Claude Sonnet 4.5 / Opus 4.6。</li>
+    <li class="en">Lens: Neuronpedia pre-fitted weights applied via Anthropic's official <span class="mono">jlens</span> reference implementation. Deviation: sparse codes are computed on the transported vector J<sub>ℓ</sub>h rather than raw h (documented above). Honest limits: second-hop failures, weak arithmetic modulation, no ASCII-face at 0.8B.</li>
+  </ul>
+</section>
+
+<footer>
+  <a href="https://transformer-circuits.pub/2026/workspace/index.html">论文 Paper</a><span class="sep">·</span>
+  <a href="https://github.com/anthropics/jacobian-lens">官方代码 anthropics/jacobian-lens</a><span class="sep">·</span>
+  <a href="https://huggingface.co/neuronpedia/jacobian-lens">预拟合透镜 neuronpedia/jacobian-lens</a><span class="sep">·</span>
+  本页由本地复现管线生成 · 2026-07-07
+</footer>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+<script>window.JSPACE_BOOT = __BOOT__;</script>
+<script>
+__APP_JS__
+</script>
